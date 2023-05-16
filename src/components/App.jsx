@@ -1,24 +1,32 @@
-import React, { Component } from "react"
+import React, { useState, useEffect } from "react";
 import shortid from 'shortid';
 import ContactForm from "./ContactForm/ContactForm";
 import Filter from "./Filter/Filter";
 import ContactList from './ContactList/ContactList';
 import { Container } from "./App.styled";
-export class App extends Component {
-  state = {
-    contacts: [
-      { id: 'id-1', name: 'Rosie Simpson', number: '459-12-56' },
-      { id: 'id-2', name: 'Hermione Kline', number: '443-89-12' },
-      { id: 'id-3', name: 'Eden Clements', number: '645-17-79' },
-      { id: 'id-4', name: 'Annie Copeland', number: '227-91-26' },
-    ],
-    filter: '',
+
+import { DEFAULT_CONTACTS } from "./Constants";
+
+const defaultContacts = JSON.parse(localStorage.getItem('contacts')) ?? DEFAULT_CONTACTS;
+
+function App() {
+  const [contacts, setContacts] = useState(defaultContacts);
+  const [filter, setFilter] = useState('');
+
+  useEffect(() => {
+    localStorage.setItem('contacts', JSON.stringify(contacts))
+  }, [contacts]);
+  
+  const getFilteredContacts = () => {
+    if (!filter) return contacts;
+    contacts.filter(contact =>
+      contact.name.toLowerCase().includes(filter.toLowerCase())
+    )
   };
 
-  formSubmitHandler = data => {
-    debugger
+  const formSubmitHandler = (data) => {
     const { name } = data;
-    const { contacts } = this.state;
+
     if (
       contacts.find(
         contact => contact.name.toLowerCase() === name.toLowerCase()
@@ -30,62 +38,25 @@ export class App extends Component {
 
     const contact = { id: shortid.generate(), ...data };
 
-    this.setState(({ contacts }) => ({
-      contacts: [...contacts, contact],
-    }));
+    return setContacts([...contacts, contact])
+  };
+  
+  const handlerChangeFilter = e => setFilter(e.target.value);
+
+  const handleRemoveContact = contactId => {
+    setContacts(contacts.filter(contact => contact.id !== contactId));
   };
 
-  handlerChangeFilter = e => this.setState({ filter: e.target.value });
+  return (
+    <Container>
+      <h1>Phonebook</h1>
+      <ContactForm onSubmit={formSubmitHandler} />
+      <h2>Contacts</h2>
+      <Filter value={filter} handlerChangeFilter={handlerChangeFilter} />
+      <ContactList contacts={getFilteredContacts()}
+        onDelete={handleRemoveContact} />
+    </Container>
+  );
+}
 
-  handleRemoveContact = contactId => {
-    this.setState(state => ({
-      ...state,
-      contacts: state.contacts.filter(contact => contact.id !== contactId),
-    }));
-  };
-
-  getFilteredContacts = () => {
-    if (!this.state.filter) return this.state.contacts;
-
-    return this.state.contacts.filter(contact =>
-      contact.name.toLowerCase().includes(this.state.filter)
-    );
-  };
-
-  deleteContact = contactId => {
-    this.setState(({ contacts }) => ({
-      contacts: contacts.filter(({ id }) => id !== contactId),
-    }));
-  };
-
-  componentDidMount = () => {
-    const contacts = localStorage.getItem('contacts');
-    const parsedContacts = JSON.parse(contacts);
-
-    if (parsedContacts) {
-      this.setState({ contacts: parsedContacts });
-    }
-  };
-
-  componentDidUpdate = (prevProps, prevState) => {
-    const { contacts } = this.state;
-    if (contacts !== prevState.contacts) {
-    }
-    localStorage.setItem('contacts', JSON.stringify(contacts))
-  };
-
-
-  render() {
-    const { filter } = this.state;
-    return (
-      <Container>
-        <h1>Phonebook</h1>
-        <ContactForm onSubmit={this.formSubmitHandler} />
-        <h2>Contacts</h2>
-        <Filter value={filter} handlerChangeFilter={this.handlerChangeFilter} />
-        <ContactList contacts={this.getFilteredContacts()}
-          onDelete={this.handleRemoveContact} />
-      </Container>
-    );
-  }
-};
+export default App;
