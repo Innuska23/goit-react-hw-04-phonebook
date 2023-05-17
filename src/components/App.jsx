@@ -15,24 +15,34 @@ const defaultContacts = JSON.parse(localStorage.getItem('contacts')) ?? DEFAULT_
 function App() {
   const [contacts, setContacts] = useState(defaultContacts);
   const [filter, setFilter] = useState('');
+  const [contactsFiltered, setContactsFiltered] = useState(defaultContacts);
 
   useEffect(() => {
     localStorage.setItem('contacts', JSON.stringify(contacts))
   }, [contacts]);
-  
-  const showToast = useRef(debounce(() => { toast.error("We cannot find this contact")},300)).current;
+
+  const showToast = useRef(debounce(() => { toast.error("We cannot find this contact") }, 1000)).current;
 
   const getFilteredContacts = () => {
-    if (!filter) return contacts;
+    if (!filter) { setContactsFiltered(contacts); return };
 
     const result = contacts.filter(contact =>
       contact.name.toLowerCase().includes(filter.toLowerCase())
     )
-    if (!result.length) {
-    showToast();
-    }
-    return result;
+    setContactsFiltered(result);
   };
+
+  useEffect(() => {
+    getFilteredContacts()
+  }, [filter]);
+
+  
+  useEffect(() => {
+    if(filter && !contactsFiltered.length) {
+      showToast()
+    }
+  }, [filter, contactsFiltered.length]);
+
 
   const formSubmitHandler = (data) => {
     const { name } = data;
@@ -50,7 +60,7 @@ function App() {
 
     return setContacts([...contacts, contact])
   };
-  
+
   const handlerChangeFilter = e => setFilter(e.currentTarget.value);
 
   const handleRemoveContact = contactId => {
@@ -63,9 +73,9 @@ function App() {
       <ContactForm onSubmit={formSubmitHandler} />
       <h2>Contacts</h2>
       <Filter value={filter} handlerChangeFilter={handlerChangeFilter} />
-      <ContactList contacts={getFilteredContacts()}
+      <ContactList contacts={contactsFiltered}
         onDelete={handleRemoveContact} />
-        <ToastContainer />
+      <ToastContainer />
     </Container>
   );
 }
