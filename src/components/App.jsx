@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import shortid from 'shortid';
 import ContactForm from "./ContactForm/ContactForm";
 import Filter from "./Filter/Filter";
@@ -23,25 +23,25 @@ function App() {
 
   const showToast = useRef(debounce(() => { toast.error("We cannot find this contact") }, 1000)).current;
 
-  const getFilteredContacts = () => {
+  const getFilteredContacts = useCallback(() => {
     if (!filter) { setContactsFiltered(contacts); return };
 
     const result = contacts.filter(contact =>
       contact.name.toLowerCase().includes(filter.toLowerCase())
     )
     setContactsFiltered(result);
-  };
+  },[contacts, filter]);
 
   useEffect(() => {
     getFilteredContacts()
-  }, [filter]);
+  }, [filter,getFilteredContacts]);
 
   
   useEffect(() => {
     if(filter && !contactsFiltered.length) {
       showToast()
     }
-  }, [filter, contactsFiltered.length]);
+  }, [filter, contactsFiltered.length, showToast]);
 
 
   const formSubmitHandler = (data) => {
