@@ -1,9 +1,12 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import shortid from 'shortid';
 import ContactForm from "./ContactForm/ContactForm";
 import Filter from "./Filter/Filter";
 import ContactList from './ContactList/ContactList';
 import { Container } from "./App.styled";
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import { debounce } from "lodash";
 
 import { DEFAULT_CONTACTS } from "./Constants";
 
@@ -17,11 +20,18 @@ function App() {
     localStorage.setItem('contacts', JSON.stringify(contacts))
   }, [contacts]);
   
+  const showToast = useRef(debounce(() => { toast.error("We cannot find this contact")},300)).current;
+
   const getFilteredContacts = () => {
     if (!filter) return contacts;
-    contacts.filter(contact =>
+
+    const result = contacts.filter(contact =>
       contact.name.toLowerCase().includes(filter.toLowerCase())
     )
+    if (!result.length) {
+    showToast();
+    }
+    return result;
   };
 
   const formSubmitHandler = (data) => {
@@ -32,7 +42,7 @@ function App() {
         contact => contact.name.toLowerCase() === name.toLowerCase()
       )
     ) {
-      alert(`${name} is already in contacts`);
+      toast.error(`${name} is already in contacts`);
       return;
     }
 
@@ -41,7 +51,7 @@ function App() {
     return setContacts([...contacts, contact])
   };
   
-  const handlerChangeFilter = e => setFilter(e.target.value);
+  const handlerChangeFilter = e => setFilter(e.currentTarget.value);
 
   const handleRemoveContact = contactId => {
     setContacts(contacts.filter(contact => contact.id !== contactId));
@@ -55,6 +65,7 @@ function App() {
       <Filter value={filter} handlerChangeFilter={handlerChangeFilter} />
       <ContactList contacts={getFilteredContacts()}
         onDelete={handleRemoveContact} />
+        <ToastContainer />
     </Container>
   );
 }
