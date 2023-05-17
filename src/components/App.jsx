@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import shortid from 'shortid';
 import ContactForm from "./ContactForm/ContactForm";
 import Filter from "./Filter/Filter";
@@ -6,7 +6,6 @@ import ContactList from './ContactList/ContactList';
 import { Container } from "./App.styled";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { debounce } from "lodash";
 
 import { DEFAULT_CONTACTS } from "./Constants";
 
@@ -15,34 +14,17 @@ const defaultContacts = JSON.parse(localStorage.getItem('contacts')) ?? DEFAULT_
 function App() {
   const [contacts, setContacts] = useState(defaultContacts);
   const [filter, setFilter] = useState('');
-  const [contactsFiltered, setContactsFiltered] = useState(defaultContacts);
 
   useEffect(() => {
     localStorage.setItem('contacts', JSON.stringify(contacts))
   }, [contacts]);
 
-  const showToast = useRef(debounce(() => { toast.error("We cannot find this contact") }, 1000)).current;
-
-  const getFilteredContacts = useCallback(() => {
-    if (!filter) { setContactsFiltered(contacts); return };
-
-    const result = contacts.filter(contact =>
+  const getFilteredContacts = () => {
+    if (!filter) return contacts;
+    return contacts.filter(contact =>
       contact.name.toLowerCase().includes(filter.toLowerCase())
     )
-    setContactsFiltered(result);
-  },[contacts, filter]);
-
-  useEffect(() => {
-    getFilteredContacts()
-  }, [filter,getFilteredContacts]);
-
-  
-  useEffect(() => {
-    if(filter && !contactsFiltered.length) {
-      showToast()
-    }
-  }, [filter, contactsFiltered.length, showToast]);
-
+  };
 
   const formSubmitHandler = (data) => {
     const { name } = data;
@@ -73,9 +55,9 @@ function App() {
       <ContactForm onSubmit={formSubmitHandler} />
       <h2>Contacts</h2>
       <Filter value={filter} handlerChangeFilter={handlerChangeFilter} />
-      <ContactList contacts={contactsFiltered}
+      <ContactList contacts={getFilteredContacts()}
         onDelete={handleRemoveContact} />
-      <ToastContainer />
+        <ToastContainer/>
     </Container>
   );
 }
